@@ -2,7 +2,7 @@
 #include <Adafruit_NeoPixel.h>
 
 #define DEBUG 1
-
+#define PULSE_PIN 8
 // Which pin on the Arduino is connected to the NeoPixels?
 // On a Trinket or Gemma we suggest changing this to 1:
 #define LED_PIN 6
@@ -25,10 +25,11 @@ int rainbow_LastColor = 0;
 
 // For stars mode
 #define STARS_RATIO 20
-#define STARS_BRIGHTSTEP 20
-int starsCount = LED_COUNT/STARS_RATIO;
-int stars_location[LED_COUNT/STARS_RATIO];
-int stars_brightness[LED_COUNT/STARS_RATIO];
+#define STARS_BRIGHTSTEP 1
+#define STARS_DELAY 20
+int starsCount = 20;
+int stars_location[20];
+int stars_brightness[20];
 
 // Modes for lights
 enum modes {
@@ -48,16 +49,18 @@ void setup() {
   
   // for indicator pin
   pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(PULSE_PIN, INPUT);
   
   // Set up strip
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
 
+  // Setup Star Location
   for(int i = 0; i < LED_COUNT/STARS_RATIO; i++)
   {
-    stars_location[i] = 0;
+    stars_location[i] = -1;
   }
-  
+
   mode = Stars;
 }
 
@@ -66,7 +69,7 @@ void loop() {
   switch (mode) {
     case Rainbow:
       rainbow();
-      delay(25);
+      delay(10);
       break;
       
     case Fade:
@@ -76,7 +79,7 @@ void loop() {
 
     case Stars:
       stars();
-      delay(100);
+      delay(STARS_DELAY);
       break;
 
   }
@@ -166,34 +169,63 @@ void stars()
   Serial.println("Stars");
   int colorInt = 0;
   uint32_t color;
+  int establishStar = (random(10) == 1);
   
   bool newStarFound = false;
   
   // Calculate colors
   for (int i = 0; i < starsCount; i++)
   {
-    if(stars_location[i] == 0 && !newStarFound)
+    if(stars_location[i] == -1 && establishStar && !newStarFound)
     {
       stars_location[i] = random(LED_COUNT);
       stars_brightness[i] = 255;
+      newStarFound = true;
     }
-  }
-  
-  // Paint Colors
-  for (int i = 0; i < starsCount; i++)
-  {
-    if(stars_location[i] > 0)
+    else if(stars_location[i] > -1)
     {
-      color = strip.ColorHSV(0, 0, stars_brightness[i]);
-      strip.setPixelColor(stars_location[i], color);
-      stars_brightness[i] = stars_brightness[i] - STARS_BRIGHTSTEP;
-      
-      if(stars_brightness[i] < 0)
+      if(stars_brightness[i] <= STARS_BRIGHTSTEP)
       {
         stars_brightness[i] = 0;
-        stars_location[i] = 0;
+        strip.setPixelColor(stars_location[i], 0, 0, 0);
+        stars_location[i] = -1;
+      }
+      else
+      {
+        stars_brightness[i] = stars_brightness[i] - STARS_BRIGHTSTEP;
       }
     }
   }
+
+  //Clear Strip
+  color = strip.Color(0, 0, 0);
+  strip.fill(color, 0, LED_COUNT);
+
+  // Paint Colors
+  for (int i = 0; i < starsCount; i++)
+  {
+    if(stars_location[i] > -1)
+    {
+      color = strip.ColorHSV(0, 0, stars_brightness[i]);
+      strip.setPixelColor(stars_location[i], color);
+    }
+  }
+
+  Serial.print("Location:" );
+  for (int i = 0; i < starsCount; i++)
+  {
+    Serial.print(stars_location[i]);
+    Serial.print(", ");
+  }
+  Serial.println("");
+
+  Serial.print("Brightness:" );
+  for (int i = 0; i < starsCount; i++)
+  {
+    Serial.print(stars_brightness[i]);
+    Serial.print(", ");
+  }
+  Serial.println("");
+  
   strip.show();
 }
