@@ -1,5 +1,4 @@
-
-#include <Adafruit_NeoPixel.h>
+#include "Adafruit_NeoPixel.h"
 
 #define DEBUG 1
 
@@ -34,12 +33,16 @@ int starsCount = 20;
 int stars_location[20];
 int stars_brightness[20];
 
+// For Off
+bool turnedOff = false;
+
 // Modes for lights
 enum modes {
     Rainbow,
     Fade,
     Stars,
-    Christmas
+    Christmas,
+    Off
   };
 
 modes mode;
@@ -65,7 +68,7 @@ void setup()
     stars_location[i] = -1;
   }
 
-  mode = Stars;
+  mode = Off;
 }
 
 void loop() {
@@ -73,6 +76,25 @@ void loop() {
   processButton();
   
   switch (mode) {
+    case Off:
+      digitalWrite(13,HIGH);
+      delay(2000);
+      digitalWrite(13,LOW);
+      delay(5000);
+      if(!turnedOff)
+      {
+        uint32_t color = strip.Color(lastColor, 0, 0);  
+        strip.fill(color, 0, LED_COUNT);
+        strip.show();
+      }
+  
+      processButton();
+      if(buttonPress)
+      {
+        mode = Rainbow;
+      }
+      break;
+          
     case Rainbow:
       if(buttonPress)
       {
@@ -103,7 +125,7 @@ void loop() {
     case Stars:
       if(buttonPress)
       {
-        mode = Rainbow;
+        mode = Off;
       }
       stars();
       delay(STARS_DELAY);
