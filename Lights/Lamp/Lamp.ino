@@ -2,10 +2,10 @@
 #include <Adafruit_NeoPixel.h>
 
 #define DEBUG 1
-#define PULSE_PIN 8
-// Which pin on the Arduino is connected to the NeoPixels?
-// On a Trinket or Gemma we suggest changing this to 1:
+
+// Pins
 #define LED_PIN 6
+#define PUSHBUTTON_PIN 2
 
 // How many NeoPixels are attached to the Arduino?
 #define LED_COUNT 60 
@@ -13,14 +13,17 @@
 
 // Declare our NeoPixel strip object:
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
+bool buttonPress = false;
+bool latch = false;
 
 // For Fade mode
 int chaseLoc = 0;  // LED location of chase
 bool chaseDir = true; // true = up, false = down
+bool fadeDir = true; // true = up, false = down
 int lastColor = 0;
 
 // For rainbo mode
-#define RAINBOW_STEPS 200
+#define RAINBOW_STEPS 50
 int rainbow_LastColor = 0;
 
 // For stars mode
@@ -35,13 +38,14 @@ int stars_brightness[20];
 enum modes {
     Rainbow,
     Fade,
-    Stars
+    Stars,
+    Christmas
   };
 
 modes mode;
   
-void setup() {
-
+void setup() 
+{
   #ifdef DEBUG
   Serial.begin(9600);
   Serial.print("serial test 0021");
@@ -49,8 +53,8 @@ void setup() {
   
   // for indicator pin
   pinMode(LED_BUILTIN, OUTPUT);
-  pinMode(PULSE_PIN, INPUT);
-  
+  pinMode(PUSHBUTTON_PIN, INPUT_PULLUP);
+
   // Set up strip
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
@@ -65,33 +69,94 @@ void setup() {
 }
 
 void loop() {
+
+  processButton();
   
   switch (mode) {
     case Rainbow:
+      if(buttonPress)
+      {
+        mode = Fade;
+      }
       rainbow();
-      delay(10);
+      delay(20);
       break;
       
     case Fade:
-      fade(true);
+      if(buttonPress)
+      {
+        mode = Christmas;
+      }
+      fade(false);
+      delay(50);
+      break;
+
+    case Christmas:
+      if(buttonPress)
+      {
+        mode = Stars;
+      }
+      christmas();
       delay(50);
       break;
 
     case Stars:
+      if(buttonPress)
+      {
+        mode = Rainbow;
+      }
       stars();
       delay(STARS_DELAY);
       break;
+  }
+}
 
+void processButton()
+{
+    // Process pushbutton
+  int pushbuttonVal = digitalRead(PUSHBUTTON_PIN);
+  if(pushbuttonVal == HIGH)
+  {
+    digitalWrite(LED_BUILTIN, LOW); 
+    buttonPress = false;
+    latch = false;
+  }
+  else
+  {
+    digitalWrite(LED_BUILTIN, HIGH);
+    if(!buttonPress && !latch)
+    {
+      buttonPress = true;
+      latch = true;
+    }
+    else
+    {
+      buttonPress = false;
+    }
   }
 }
 
 // direction - True = Up, False = down
 void fade(bool chase)
 {
-  lastColor++;
+  if(fadeDir)
+  {
+    lastColor++;
+  }
+  else
+  {
+    lastColor--;
+    
+  }
   if(lastColor > 255)
   {
-    lastColor = 0;
+    lastColor = 254;
+    fadeDir = false;
+  }
+  else if(lastColor < 1)
+  {
+    lastColor = 1;
+    fadeDir = true;
   }
 
   uint32_t color = strip.Color(lastColor, lastColor, lastColor);
@@ -123,7 +188,6 @@ void fade(bool chase)
     }
   }
   strip.show();
-
 }
 
 // direction - True = Up, False = down
@@ -149,7 +213,7 @@ void rainbow()
       hue = hue - MAX_HUE;
     }
     
-    color = strip.ColorHSV(hue, 255, 128);
+    color = strip.ColorHSV(hue, 255, 255);
     strip.setPixelColor(i, color);
   }
   strip.show();
@@ -211,21 +275,54 @@ void stars()
     }
   }
 
-  Serial.print("Location:" );
-  for (int i = 0; i < starsCount; i++)
-  {
-    Serial.print(stars_location[i]);
-    Serial.print(", ");
-  }
-  Serial.println("");
+  strip.show();
+}
 
-  Serial.print("Brightness:" );
-  for (int i = 0; i < starsCount; i++)
+// direction - True = Up, False = down
+enum christmasModeEnum {red, green};
+christmasModeEnum christmasMode = red;
+
+void christmas()
+{
+  if(chaseDir)
   {
-    Serial.print(stars_brightness[i]);
-    Serial.print(", ");
+    lastColor++;
   }
-  Serial.println("");
+  else
+  {
+    lastColor--;
+  }
   
+  if(lastColor > 255)
+  {
+    lastColor = 254;
+    chaseDir = false;
+  }
+  else if(lastColor < 1)
+  {
+    lastColor = 1;
+    chaseDir = true;
+    if(christmasMode == red)
+    {
+      christmasMode = green;
+    }
+    else
+    {
+      christmasMode = red;
+    }
+  }
+
+  uint32_t color = 0;
+  
+  if(christmasMode == red)
+  {
+    color = strip.Color(lastColor, 0, 0);  
+  }
+  else
+  {
+    color = strip.Color(0, lastColor, 0);  
+  }
+  
+  strip.fill(color, 0, LED_COUNT);
   strip.show();
 }
