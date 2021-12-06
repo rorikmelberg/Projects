@@ -68,7 +68,7 @@ void setup()
     stars_location[i] = -1;
   }
 
-  mode = Off;
+  mode = Rainbow;
 }
 
 void loop() {
@@ -119,13 +119,13 @@ void loop() {
         mode = Stars;
       }
       christmas();
-      delay(50);
+      delay(10);
       break;
 
     case Stars:
       if(buttonPress)
       {
-        mode = Off;
+        mode = Rainbow;
       }
       stars();
       delay(STARS_DELAY);
