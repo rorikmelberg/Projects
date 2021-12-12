@@ -33,6 +33,9 @@ int starsCount = 20;
 int stars_location[20];
 int stars_brightness[20];
 
+// For Icicle Mode
+int icicleLastPos = LED_COUNT;
+
 // For Off
 bool turnedOff = false;
 
@@ -42,6 +45,7 @@ enum modes {
     Fade,
     Stars,
     Christmas,
+    Icicle,
     Off
   };
 
@@ -68,7 +72,7 @@ void setup()
     stars_location[i] = -1;
   }
 
-  mode = Rainbow;
+  mode = Icicle;
 }
 
 void loop() {
@@ -94,7 +98,16 @@ void loop() {
         mode = Rainbow;
       }
       break;
-          
+
+    case Icicle:
+      if(buttonPress)
+      {
+        mode = Rainbow;
+      }
+      icicle();
+      delay(40);
+      break;
+      
     case Rainbow:
       if(buttonPress)
       {
@@ -125,7 +138,7 @@ void loop() {
     case Stars:
       if(buttonPress)
       {
-        mode = Rainbow;
+        mode = Icicle;
       }
       stars();
       delay(STARS_DELAY);
@@ -238,6 +251,43 @@ void rainbow()
     color = strip.ColorHSV(hue, 255, 255);
     strip.setPixelColor(i, color);
   }
+  strip.show();
+}
+
+
+void icicle()
+{
+  uint32_t colors[LED_COUNT];
+  uint32_t color;
+ 
+  icicleLastPos--;
+  if (icicleLastPos < 1)
+  {
+    icicleLastPos = LED_COUNT;
+  }
+
+  color = strip.ColorHSV(38228, 230, 125);
+  strip.fill(color, 0, LED_COUNT);
+
+  for (int i = 0; i < 6; i++)
+  {
+    color = strip.ColorHSV(38228, 1, 255);
+    strip.setPixelColor(icicleLastPos - i, color);
+  }
+  /*
+  // Calculate colors
+  for (int i = 0; i <= LED_COUNT; i++)
+  {
+    int hue = rainbow_LastColor + (colorStep * i);
+    if(hue > MAX_HUE)
+    { 
+      hue = hue - MAX_HUE;
+    }
+    
+    color = strip.ColorHSV(hue, 255, 255);
+    strip.setPixelColor(i, color);
+  }
+*/
   strip.show();
 }
 
