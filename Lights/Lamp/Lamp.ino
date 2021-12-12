@@ -7,7 +7,7 @@
 #define PUSHBUTTON_PIN 2
 
 // How many NeoPixels are attached to the Arduino?
-#define LED_COUNT 59
+#define LED_COUNT 120
 #define MAX_HUE 65535
 
 // Declare our NeoPixel strip object:
