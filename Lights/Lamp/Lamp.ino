@@ -37,7 +37,7 @@ int stars_brightness[20];
 int icicleLastPos = LED_COUNT;
 
 // For Christmas Chase
-#define CC_STEP 20  // Step for each pixel
+#define CC_STEP 3   // Step for each pixel
 
 // Modes for lights
 enum modes {
@@ -116,7 +116,7 @@ void loop() {
         mode = Stars;
       }
       christmasChase();
-      delay(10);
+      delay(20);
       break;
 
     case Stars:
@@ -388,23 +388,24 @@ void ccProcessColor(ccLightStatus& lightstatus)
     lightstatus.color = lightstatus.color - CC_STEP;
   }
 
-  if (lightstatus.color > 255)
+  if (lightstatus.color > 100)
   {
-    lightstatus.color = 254;
+    lightstatus.color = 99;
     lightstatus.fadeDirection = false;
   }
   else if (lightstatus.color < 1)
   {
     lightstatus.color = 1;
     lightstatus.fadeDirection = true;
-  }
 
-  if (lightstatus.mode == Red)
-  {
-    lightstatus.mode = Green;
+    if (lightstatus.mode == Red)
+    {
+      lightstatus.mode = Green;
+    }
+    else
+    {
+      lightstatus.mode = Red;
+    }
   }
-  else
-  {
-    lightstatus.mode = Red;
-  }
+ 
 }
